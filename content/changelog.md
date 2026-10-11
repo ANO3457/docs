@@ -11,6 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [1.27.0] - 2026-10-11 { #1.27.0 }
 
+This release is mostly about multi-step work: one issue can now move through several stages, such as specify and then implement, without a person moving it along.
+
+A label on an issue now picks the stage it runs on, and each stage can name the one that follows it. When a run succeeds, Sortie moves the issue to the next stage by itself, and the last stage hands it off as before. Stats and the dashboard show the path each issue took and where it stopped, and notifications can tell you when an issue moves on or why it did not. Prompt templates can now share text, so a common instruction lives in one place.
+
+Review follow-ups are quieter: the agent is no longer handed comments it already got, and Sortie no longer asks for a human right after the last allowed turn fixed the comments. Codex agents can now use Sortie's tools. OpenCode runs no longer fail when the model is slow to start answering. Stopping a session can no longer kill an unrelated process that happened to reuse its ID.
+
+Before you upgrade, check your tracker states. There are no built-in state lists any more, so list every active and finished state in your workflow. On GitHub, Gitea and GitLab, an open issue with no active state label is now left alone, so label the issues Sortie should work on. A template that calls a shared block nobody defines now stops the workflow from loading. OpenCode now needs 2.x, and the Kiro agent type is gone: run Kiro CLI through the Agent Client Protocol. On remote workers, OpenCode now applies its tool and compaction settings, as it does locally.
+
 ### Added
 
 - A dispatch rule can now carry a `stage` label in place of a `match` block: an issue that carries the label runs on that rule wherever it sits in the list, so one label puts an issue on a stage, and an issue with several stage labels runs on the first such rule and logs a warning. `sortie validate` rejects a stage label that two rules share, that names a tracker state, or that is a label Sortie adds itself, such as `needs-human`. ([#1256](https://github.com/sortie-ai/sortie/issues/1256))
@@ -111,6 +119,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 
 ## [1.26.0] - 2026-10-01 { #1.26.0 }
 
+This release is mostly about choosing which model works on which issue, and hearing back when something goes wrong.
+
+You can now send routine issues to a cheaper model and hard ones to a stronger one, with a different reasoning level for each, and route an issue by a phrase in its title. Run history, the dashboard and the stats show which model did each run. Reasoning level now also works for Copilot and OpenCode, and edits to an agent's settings apply from the next attempt without a restart.
+
+Slack and webhook notifications can now carry Sortie's own events, such as a failed session, and you choose which events get a comment on the issue. When an agent stops because it is blocked or needs a human, the reason it gives now shows up in that comment and in the notification.
+
+Setup is shorter: the command that starts your agent can be left out for most agents. Retries and routed issues no longer start the wrong agent after a workflow change. After a failed CI check, the agent now sees the step that failed instead of the tail of the whole job log. Gemini CLI reports token usage on current releases, so the token limit applies to it.
+
+Before you upgrade, check two things. The old CI feedback section is gone: a workflow that still has it no longer starts, so move it under reactions first. The Kiro agent type is removed: most setups are converted automatically with a warning, but one that limits which tools Kiro may use fails to load until you move it to the Agent Client Protocol. OpenCode 1.x still works but is deprecated, so plan the move to 2.x.
+
 ### Added
 
 - The command that starts your agent (`agent.command`) can now also be written as a list with one part per line, so a program path or an agent name that contains a space reaches the agent intact. ([#1168](https://github.com/sortie-ai/sortie/issues/1168))
@@ -161,6 +179,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A scheduled retry no longer waits for a later recovery pass when the process pauses while arming its timer. ([#1231](https://github.com/sortie-ai/sortie/pull/1231))
 
 ## [1.25.0] - 2026-09-27 { #1.25.0 }
+
+This release is mostly about trusting the numbers: token counts, costs and budget stops now match what the agents actually did.
+
+Cost estimates no longer charge cached input twice, which made them several times too high for sessions that use the prompt cache heavily, and past runs are corrected too. Gemini CLI running on the same machine as Sortie now reports its usage, so the token ceiling applies to it. You can also set an early warning below the ceiling, so the agent can wrap up and you can raise the limit before the run is stopped.
+
+Sortie now checks that the agent can sign in before it starts work on an issue, for every agent, locally and on remote hosts. A credential the agent cannot use stops the run with an error naming it. Credentials that an agent, a hook or a check prints no longer end up in the log, the run history or the dashboard.
+
+An agent that exits right away, for example on a typo in its command, now fails with its exit status and the last lines of its error output, instead of a lost connection or a false credential error. A long-running Sortie no longer uses more memory with every run, and a Copilot session can no longer resume another issue's conversation.
+
+The new major version of OpenCode is supported next to the old one, and Sortie detects which is installed. The Kiro agent type is deprecated in favor of running Kiro CLI through the Agent Client Protocol; existing setups keep working and print one warning.
+
+Before you upgrade, check three things. Copilot now needs a recent GitHub Copilot CLI, so update it first. A price entry with only an input price or only an output price now gets no cost estimate, so add the missing one. If you alert on agents that fail at startup, the error now looks different. The comments Sortie posts on issues are also shorter, and the failure comment no longer quotes the error.
 
 ### Added
 
@@ -250,6 +280,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Add `cache_write_tokens INTEGER NOT NULL DEFAULT 0` to `run_history`, `session_metadata`, and `aggregate_metrics`. ([#1181](https://github.com/sortie-ai/sortie/issues/1181))
 
 ## [1.24.1] - 2026-09-17 { #1.24.1 }
+
+This release is mostly about sessions that used to hang, and about cost numbers you can trust.
+
+Agents no longer get stuck. If a coding agent started a background process that kept its output open, the session could hang until it timed out, or report a success as a failure. That is fixed for every supported agent, on Linux, macOS and Windows. Leftover processes are now cleaned up when the work ends, instead of being left behind against your repository.
+
+Cost and token numbers are correct. Spend from a session that is still running now counts toward its budget, so work no longer stops early because the same tokens were counted twice. The dashboard also tells you how many sessions are missing from the totals and why, so a low number no longer looks like a cheap run when it is really an incomplete one.
+
+When an agent fails, you get the reason. A session that dies during startup now shows the error the agent itself printed, instead of only an exit code.
+
+Running agents on other machines works properly. You can now choose which environment variables are sent to a remote machine, and which ones are never sent. Several cases where a remote agent started in the wrong place, or without its credentials, are fixed. API keys no longer appear in the process list on either machine.
+
+One thing to check after upgrading: if a script you run alongside an agent starts a long-lived service, that service will now be shut down when the script finishes. Start it through your system's service manager instead. This changes behavior on Linux and macOS, where such a process used to survive.
 
 ### Added
 
