@@ -9,7 +9,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.28.0] - 2026-10-11
+## [1.28.0] - 2026-10-11 { #1.28.0 }
+
+This release is mostly about seeing what Sortie is doing without reading its logs.
+
+The built-in dashboard is now a live application. It shows what needs a person and why, every active issue with its stage, agent, model and spend, each pull request's path through CI and review fixes, a live view of every agent session, run history, analytics, and Sortie's own health. From it you can retry an issue now, recheck a pull request, or acknowledge an alert. Everything the dashboard shows is also available over the JSON API, including a live event stream and a year of each run's agent events, if you want to build your own view.
+
+Pull request follow-ups are more reliable. An escalated CI failure or review now stays escalated across a restart, so Sortie no longer runs a second round of fixes after one, and a passing re-run of the checks clears it. A fix label added while another run is busy is no longer ignored, and Sortie keeps watching a pull request after a fix pushes to it.
+
+The numbers are more honest. A token limit turned on during a running session now counts everything the issue already spent. The stats break runs down by what started them and show how far issues got through their stages. Passwords and user names in tracker and tool server addresses no longer show up in issue links, logs or the API.
+
+Before you upgrade, check two things. The dashboard can now change things, not only show them, and it has no login, so if anyone else can reach it, put it behind a proxy that asks for a login, or a VPN. Token figures on the dashboard now show prompt cache reads on their own line, so they look smaller; the token limit still counts them.
 
 ### Added
 
