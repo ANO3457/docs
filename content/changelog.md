@@ -41,6 +41,46 @@ Before you upgrade, check two things. The tool call metric now names MCP tools t
 
 - Sortie can now post its notifications to a Discord channel: add a `discord` entry to `notifications` with the channel's webhook URL in `webhook_url` (for example `$SORTIE_DISCORD_WEBHOOK_URL`). Each message carries the same text as a Slack message, a message longer than Discord's 2000-character limit is cut to fit, and no message pings a user, a role, or `@everyone`. ([#1455](https://github.com/sortie-ai/sortie/issues/1455))
 
+### Changed
+
+- The dashboard shows an issue's status as one word with the same mark on every screen.
+
+- Overview's Agents running tile now says how many agents are idle, or that all of them are running, instead of showing the running count against the agent limit.
+
+- Tool lines in the session view now show what each call ran: an icon for its kind, then the command of a shell call, the tool and path of a file call, the tool and skill of a skill call, or the name of any other tool, with MCP tools named as `server.tool`, such as `github.get_issue`. A long line is cut at the pane's width and shows in full on hover, and a folded group of calls reads as counts such as `3 commands, 2 file reads`. The event log and the live event stream carry the same line with secrets masked, and the `tool` label of the tool call metric names MCP tools the same way. ([#1438](https://github.com/sortie-ai/sortie/issues/1438))
+
+- An OpenCode CLI turn whose output Sortie cannot read now fails with error kind `port_exit` instead of `response_error`, and one whose runtime exits with status 127 after writing output fails with `agent_not_found`, which is not retried, instead of `port_exit`.
+
+- The reason an agent gives when it stops on `blocked`, `needs-human-review`, or `no-change-needed` now appears as plain text after the rest of the message: Sortie's issue comment no longer puts it in a code block, and Slack no longer escapes `&`, `<`, and `>` in it. Secrets Sortie knows are still masked. ([#1454](https://github.com/sortie-ai/sortie/issues/1454))
+
+### Fixed
+
+- When a bot review's triage command answers `handled`, the issue page, the Pipeline, and the status sentence now say the bot review was handled, also after Sortie restarts, instead of showing comments to answer or waiting on the bot review; a bot review's `last_check` in the state API gains `handled`. ([#1439](https://github.com/sortie-ai/sortie/issues/1439))
+
+- The issue page no longer says that a review or bot review has comments to answer after a fix run was given those comments and the pull request still shows them; it reads waiting until new comments arrive. ([#1439](https://github.com/sortie-ai/sortie/issues/1439))
+
+- The issue page and the peek of an ended issue now give its ending the time it happened instead of the current time.
+
+- In a workflow with more than one terminal state, Overview's Ended today counts the issues that reached a terminal state as closed instead of done, so a cancelled issue no longer reads as done, and the end station of an ended issue's lane names the state the issue reached, or Merged, instead of End. ([#1440](https://github.com/sortie-ai/sortie/issues/1440))
+
+- The dashboard's status card and the browser tab title no longer read All clear, and Overview no longer reads Nothing needs attention, while an attention item you acknowledged still stands, such as a parked issue; they say it is waiting on a person until the item clears. ([#1441](https://github.com/sortie-ai/sortie/issues/1441))
+
+- A running issue's state and labels now follow the tracker on the dashboard and in the state API: they refresh right after Sortie moves the issue to in progress and on every poll, instead of showing the labels from dispatch for the whole run. ([#1446](https://github.com/sortie-ai/sortie/issues/1446))
+
+- The run history API now says when an agent ended a run with `blocked`, `needs-human-review`, or `no-change-needed` and serves the reason it wrote, so such a run no longer reads as an ordinary success; runs recorded before this release carry neither. ([#1456](https://github.com/sortie-ai/sortie/issues/1456))
+
+- A run whose agent stopped to ask for help, asked for a human review, or found that no change was needed no longer reads Succeeded on the issue page, the peek, the session view, History, and the command palette. Those places now name that outcome, and the issue page, the session view, and History show what the agent wrote beside it, or on hover in History. ([#1457](https://github.com/sortie-ai/sortie/issues/1457))
+
+- On Gitea, auto-merge now waits for the approvals the target branch requires instead of trying to merge before they arrive. ([#1444](https://github.com/sortie-ai/sortie/issues/1444))
+
+- After an edit of the workflow file changed the tracker kind, Sortie showed the new kind while it kept polling the tracker it started with. It now shows the tracker it polls, and the workflow reference says a change of tracker kind, project, address, API key, query filter, or Jira API version takes effect at the next restart. ([#1442](https://github.com/sortie-ai/sortie/issues/1442))
+
+- A Codex run no longer shows shell commands with secrets unmasked in the event log and debug logs, its tool calls no longer give the tool call metric a new series for every distinct command, and its MCP tool calls show the tool they called. ([#1438](https://github.com/sortie-ai/sortie/issues/1438))
+
+- OpenCode CLI turns now follow the Claude Code and Copilot CLI lifecycle: a turn cancelled before it starts is reported as cancelled, a turn that fails to start keeps the token usage already measured, a stop is no longer overridden by a failure the runtime reported, and every turn, over SSH too, reports its process ID. Copilot CLI now also reports token usage for cancelled and failed turns when the runtime recorded it.
+
+- `sortie stats` and the Analytics screen now name every part of the report an older database leaves out, not only the first one. ([#1473](https://github.com/sortie-ai/sortie/issues/1473))
+
 ## [1.29.0] - 2026-10-20 { #1.29.0 }
 
 This release is mostly about money: you can now cap what agents spend in dollars, and the cost figures behind that cap are ones you can trust.
